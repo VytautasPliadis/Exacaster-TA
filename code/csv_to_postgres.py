@@ -6,7 +6,7 @@ from psycopg2 import Error
 
 
 
-# Set up logging
+# set up logging
 logging.basicConfig(filename='ETL_errors.log', level=logging.ERROR,
                     format='%(asctime)s %(levelname)s %(name)s %(message)s')
 logger = logging.getLogger(__name__)
