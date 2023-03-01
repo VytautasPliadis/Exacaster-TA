@@ -31,14 +31,18 @@ ALTER TABLE events
   rate_plans(rate_plan_id); 
 -- ------------------------------------------------------------------------------------------------------------------------------
 INSERT INTO customers
-            (customer_id)
-SELECT DISTINCT customer_id
-FROM   usage;
+  (SELECT DISTINCT customer_id
+   FROM USAGE
+   WHERE customer_id NOT IN
+       (SELECT DISTINCT customer_id
+        FROM customers));
 
 INSERT INTO rate_plans
-            (rate_plan_id)
-SELECT DISTINCT rate_plan_id
-FROM   usage; 
+  (SELECT DISTINCT rate_plan_id
+   FROM USAGE
+   WHERE rate_plan_id NOT IN
+       (SELECT DISTINCT rate_plan_id
+        FROM rate_plans));
 
 INSERT INTO events
             (customer_id,
@@ -63,31 +67,19 @@ SELECT
 FROM   usage; 
 -- ------------------------------------------------------------------------------------------------------------------------------
 DELETE
-FROM   events
-WHERE  event_start_time < Now() - interval '6 MONTH';
+FROM events
+WHERE event_start_time < Now() - interval '6 MONTH';
 
-DELETE FROM customers
-WHERE customer_id IN (
-    SELECT c.customer_id
-    FROM customers c
-    LEFT JOIN (
-        SELECT customer_id, MAX(event_start_time) AS last_event_time
-        FROM events
-        GROUP BY customer_id
-    ) e ON c.customer_id = e.customer_id
-    WHERE e.last_event_time < NOW() - INTERVAL '6 MONTH' OR e.customer_id IS NULL
-);
+DELETE
+FROM customers
+WHERE customer_id NOT IN
+    (SELECT customer_id
+     FROM events);
 
-DELETE FROM rate_plans
-WHERE rate_plan_id IN (
-    SELECT rp.rate_plan_id
-    FROM rate_plans rp
-    LEFT JOIN (
-        SELECT rate_plan_id, MAX(event_start_time) AS last_event_time
-        FROM events
-        GROUP BY rate_plan_id
-    ) e ON rp.rate_plan_id = e.rate_plan_id
-    WHERE e.last_event_time < NOW() - INTERVAL '6 MONTH' OR e.rate_plan_id IS NULL
-);
+DELETE
+FROM rate_plans
+WHERE rate_plan_id NOT IN
+    (SELECT rate_plan_id
+     FROM events);
 -- ------------------------------------------------------------------------------------------------------------------------------                            
 SELECT cron.schedule('0 0 * * *', 'DELETE FROM usage WHERE event_start_time < NOW() - INTERVAL ''6 months''');
