@@ -32,14 +32,14 @@ ALTER TABLE events
 -- ------------------------------------------------------------------------------------------------------------------------------
 INSERT INTO customers
   (SELECT DISTINCT customer_id
-   FROM USAGE
+   FROM landing_zone
    WHERE customer_id NOT IN
        (SELECT DISTINCT customer_id
         FROM customers));
 
 INSERT INTO rate_plans
   (SELECT DISTINCT rate_plan_id
-   FROM USAGE
+   FROM landing_zone
    WHERE rate_plan_id NOT IN
        (SELECT DISTINCT rate_plan_id
         FROM rate_plans));
@@ -64,7 +64,7 @@ SELECT
        duration,
        charge,
        month
-FROM   usage; 
+FROM   landing_zone; 
 -- ------------------------------------------------------------------------------------------------------------------------------
 DELETE
 FROM events
@@ -82,4 +82,4 @@ WHERE rate_plan_id NOT IN
     (SELECT rate_plan_id
      FROM events);
 -- ------------------------------------------------------------------------------------------------------------------------------                            
-SELECT cron.schedule('0 0 * * *', 'DELETE FROM usage WHERE event_start_time < NOW() - INTERVAL ''6 months''');
+SELECT cron.schedule('0 0 * * *', 'DELETE FROM events WHERE event_start_time < NOW() - INTERVAL ''6 months''');
